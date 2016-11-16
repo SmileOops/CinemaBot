@@ -1,32 +1,24 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.Description;
+using CinemaBot.Classes;
 using Microsoft.Bot.Connector;
-using Newtonsoft.Json;
 
-namespace CinemaBot
+namespace CinemaBot.Controllers
 {
     [BotAuthentication]
     public class MessagesController : ApiController
     {
-        /// <summary>
-        /// POST: api/Messages
-        /// Receive a message from a user and reply to it
-        /// </summary>
-        public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
+        public async Task<HttpResponseMessage> Post([FromBody] Activity activity)
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                // calculate something for us to return
-                int length = (activity.Text ?? string.Empty).Length;
+                var connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
-                // return our reply to the user
-                Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
+                var reply = activity.CreateReply(await HtmlParser.GetFilmInfo(activity.Text));
+
                 await connector.Conversations.ReplyToActivityAsync(reply);
             }
             else
