@@ -11,18 +11,12 @@ namespace CinemaBot.Classes
 {
     public static class HtmlParser
     {
-        #region SearchParsingSelectors
-
-        private const string IdSelector = "div p a.js-serp-metrika";
-
-        #endregion
-
         public static async Task<string> GetFilmInfo(string filmId)
         {
             var response = string.Empty;
 
             var config = Configuration.Default.WithDefaultLoader();
-            var address = $"https://www.kinopoisk.ru/film/{filmId}/";
+            var address = $"https://www.kinopoisk.ru/film/{filmId}";
 
             var document = await BrowsingContext.New(config).OpenAsync(address);
 
@@ -41,21 +35,45 @@ namespace CinemaBot.Classes
             return response;
         }
 
-        //not all results yet
-        public static async Task<List<string>> GetFilmIdsInfoBySearching(string userQuery)
+        public static async Task<string> GetSimilarFilmInfo(string userQuery)
         {
-            var url = $"https://www.kinopoisk.ru/index.php?first=no&what=&kp_query={EncodeCyrillicString(userQuery)}";
+            var ids = await GetFilmsIdsFromSearchPage(userQuery);
 
-            var config = Configuration.Default.WithDefaultLoader();
+            var similarIds = await GetFilmsIdsFromSimilarsPage(ids[0]);
 
-            var document = await BrowsingContext.New(config).OpenAsync(url);
+            var kek = await GetFilmInfo(similarIds[0]);
+            return kek;
+        }
 
-            var parser = new AngleSharp.Parser.Html.HtmlParser();
-            var htmlDocument = parser.Parse(document.Body.InnerHtml);
+        //not all results yet
+        private static async Task<List<string>> GetFilmsIdsFromSearchPage(string userQuery)
+        {
+            var url = SearchUrl + EncodeCyrillicString(userQuery);
+
+            var htmlDocument = await GetParsedPageByUrl(url);
 
             return GetElementAttributes(htmlDocument, IdSelector, "data-id").Distinct().ToList();
         }
 
+        private static async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)
+        {
+            var url = FilmUrl + $"{filmId}/like";
+
+            var htmlDocument = await GetParsedPageByUrl(url);
+
+            var attributes = GetElementAttributes(htmlDocument, SimilarIdSelector, "href");
+
+            return attributes.Select(attribute => attribute.Replace("/film/", "")).ToList();
+        }
+
+        private static async Task<IHtmlDocument> GetParsedPageByUrl(string url)
+        {
+            var config = Configuration.Default.WithDefaultLoader();
+            var document = await BrowsingContext.New(config).OpenAsync(url);
+            var parser = new AngleSharp.Parser.Html.HtmlParser();
+
+            return parser.Parse(document.Body.InnerHtml);
+        }
 
         private static List<string> GetElementTexts(IHtmlDocument parsedHtml, string selector)
         {
@@ -90,5 +108,19 @@ namespace CinemaBot.Classes
         private const string SynopsysSelector = "div.film-synopsys";
 
         #endregion FilmParsingSelectors
+
+        #region SearchParsingSelectors
+
+        private const string IdSelector = "div p a.js-serp-metrika";
+        private const string SimilarIdSelector = "a.i_orig";
+
+        #endregion
+
+        #region urls
+
+        private const string SearchUrl = "https://www.kinopoisk.ru/index.php?first=no&what=&kp_query=";
+        private const string FilmUrl = "https://www.kinopoisk.ru/film/";
+
+        #endregion urls
     }
 }

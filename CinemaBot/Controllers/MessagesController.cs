@@ -16,8 +16,10 @@ namespace CinemaBot.Controllers
             if (activity.Type == ActivityTypes.Message)
             {
                 var connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-              
-                var reply = activity.CreateReply();
+
+                var reply = activity.CreateReply(await HtmlParser.GetSimilarFilmInfo(activity.Text));
+                // var reply = activity.CreateReply("Hello");
+
                 await connector.Conversations.ReplyToActivityAsync(reply);
             }
             else
