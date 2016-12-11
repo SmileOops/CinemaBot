@@ -17,9 +17,11 @@ namespace CinemaBot.Classes
             var ids = await GetFilmsIdsFromSearchPage(userQuery);
 
             var similarIds = await GetFilmsIdsFromSimilarsPage(ids[0]);
-
-            var firstFilmInfo = await GetFilmInfo(similarIds[0]);
-            return firstFilmInfo;
+            if (similarIds.Count != 0)
+            {
+                return await GetFilmInfo(similarIds[0]);
+            }
+            return new FilmInfo(string.Empty, string.Empty);
         }
 
         private static async Task<FilmInfo> GetFilmInfo(string filmId)
@@ -80,7 +82,17 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            return GetElementAttributes(htmlDocument, IdSelector, "data-id").Distinct().ToList();
+            var ids = GetElementAttributes(htmlDocument, IdSelector, "data-id");
+
+            if (ids.Count != 0)
+            {
+                return ids.Distinct().ToList();
+            }
+            else
+            {
+                return new List<string>();
+            }
+            
         }
 
         private static async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)
