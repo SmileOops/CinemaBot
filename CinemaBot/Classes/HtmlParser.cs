@@ -6,43 +6,65 @@ using System.Threading.Tasks;
 using System.Web;
 using AngleSharp;
 using AngleSharp.Dom.Html;
+using CinemaBot.Enums;
 
 namespace CinemaBot.Classes
 {
-    public static class HtmlParser
+    internal static class HtmlParser
     {
-        public static async Task<string> GetFilmInfo(string filmId)
-        {
-            var response = string.Empty;
-
-            var config = Configuration.Default.WithDefaultLoader();
-            var address = $"https://www.kinopoisk.ru/film/{filmId}";
-
-            var document = await BrowsingContext.New(config).OpenAsync(address);
-
-            var parser = new AngleSharp.Parser.Html.HtmlParser();
-            var htmlDocument = parser.Parse(document.Body.InnerHtml);
-
-            response += GetElementTexts(htmlDocument, TitleRussianSelector)[0];
-            response += Environment.NewLine + Environment.NewLine;
-            response += GetElementTexts(htmlDocument, TitleEnglishSelector)[0];
-            response += Environment.NewLine + Environment.NewLine;
-            response += GetElementTexts(htmlDocument, YearSelector)[0];
-            response += Environment.NewLine + Environment.NewLine;
-            response += "![poster](" + GetElementAttributes(htmlDocument, PosterSelector, "src")[0] + ")";
-            response += Environment.NewLine + Environment.NewLine;
-            response += GetElementTexts(htmlDocument, SynopsysSelector)[0];
-            return response;
-        }
-
-        public static async Task<string> GetSimilarFilmInfo(string userQuery)
+        internal static async Task<FilmInfo> GetSimilarFilmInfo(string userQuery)
         {
             var ids = await GetFilmsIdsFromSearchPage(userQuery);
 
             var similarIds = await GetFilmsIdsFromSimilarsPage(ids[0]);
 
-            var kek = await GetFilmInfo(similarIds[0]);
-            return kek;
+            var firstFilmInfo = await GetFilmInfo(similarIds[0]);
+            return firstFilmInfo;
+        }
+
+        private static async Task<FilmInfo> GetFilmInfo(string filmId)
+        {
+            var config = Configuration.Default.WithDefaultLoader();
+            var address = $"https://www.kinopoisk.ru/film/{filmId}";
+            var document = await BrowsingContext.New(config).OpenAsync(address);
+            var parser = new AngleSharp.Parser.Html.HtmlParser();
+            var htmlDocument = parser.Parse(document.Body.InnerHtml);
+
+            var response = new StringBuilder();
+                
+            response.Append($"**{GetElementTexts(htmlDocument, TitleRussianSelector)[0]}** ");
+            response.Append($"({GetElementTexts(htmlDocument, YearSelector)[0]})");
+            response.Append(Environment.NewLine);
+            response.Append(Environment.NewLine);
+            response.Append(GetElementTexts(htmlDocument, TitleEnglishSelector)[0]);
+            response.Append(Environment.NewLine);
+            response.Append(Environment.NewLine);
+            response.Append($"**Рейтинг КиноПоиска: {GetElementTexts(htmlDocument, RatingSelector)[0]}**");
+            response.Append(Environment.NewLine);
+            response.Append(Environment.NewLine);
+            response.Append($"[Трейлер]({await GetTrailerUrl(htmlDocument)})");
+            response.Append(Environment.NewLine);
+            response.Append(Environment.NewLine);
+            response.Append($"**Режиссер**: {GetElementTexts(htmlDocument, DirectorSelector)[0]}");
+            response.Append(Environment.NewLine);
+            response.Append(Environment.NewLine);
+            response.Append(GetActorsString(htmlDocument));
+            response.Append(Environment.NewLine);
+            response.Append(Environment.NewLine);
+            response.Append(GetElementTexts(htmlDocument, SynopsysSelector)[0]);
+
+            return new FilmInfo(response.ToString(), GetElementAttributes(htmlDocument, PosterSelector, "src")[0]);
+        }
+
+        private static async Task<List<string>> GetFilmsIdsFromTopByGenrePage(GenresFromTop genre)
+        {
+            var url = TopByGenreUrl + (int) genre;
+
+            var htmlDocument = await GetParsedPageByUrl(url);
+
+            var attributes = GetElementAttributes(htmlDocument, TopByGenreIdSelector, "mid").ToList();
+
+            return attributes;
         }
 
         //not all results yet
@@ -75,6 +97,22 @@ namespace CinemaBot.Classes
             return parser.Parse(document.Body.InnerHtml);
         }
 
+        //refactor this shit
+        private static async Task<string> GetTrailerUrl(IHtmlDocument parsedHtmlDocument)
+        {
+            var trailerPageUrl =
+                $"https://kinopoisk.ru{GetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href")[0]}";
+
+            var config = Configuration.Default.WithDefaultLoader();
+            var trailerPageDocument = await BrowsingContext.New(config).OpenAsync(trailerPageUrl);
+            var parser = new AngleSharp.Parser.Html.HtmlParser();
+            var htmlDocument = parser.Parse(trailerPageDocument.Body.InnerHtml);
+
+            var url = GetElementAttributes(htmlDocument, TrailerVideoSelector, "href")[2];
+
+            return url.Substring(url.IndexOf("https", StringComparison.Ordinal));
+        }
+
         private static List<string> GetElementTexts(IHtmlDocument parsedHtml, string selector)
         {
             var cells = parsedHtml.QuerySelectorAll(selector);
@@ -96,6 +134,32 @@ namespace CinemaBot.Classes
             return HttpUtility.UrlEncode(cyrillicSrc, Encoding.GetEncoding(1251));
         }
 
+        private static string GetActorsString(IHtmlDocument parsedHtml)
+        {
+            var actors = GetElementTexts(parsedHtml, ActorsSelector);
+
+            var sb = new StringBuilder();
+
+            sb.Append("**В главных ролях**: ");
+
+            if (actors.Count >= 4)
+            {
+                sb.Append($"{actors[0]}, ");
+                sb.Append($"{actors[1]}, ");
+                sb.Append($"{actors[2]}, ");
+                sb.Append($"{actors[3]}...");
+            }
+            else
+            {
+                for (var i = 0; i < actors.Count; i++)
+                {
+                    sb.Append(i != actors.Count - 1 ? $"{actors[i]}, " : $"{actors[i]}...");
+                }
+            }
+
+            return sb.ToString();
+        }
+
         #region FilmParsingSelectors
 
         private const string TitleRussianSelector = "h1.moviename-big";
@@ -106,6 +170,11 @@ namespace CinemaBot.Classes
 
         private const string PosterSelector = "a.popupBigImage img";
         private const string SynopsysSelector = "div.film-synopsys";
+        private const string TrailerPageSelector = "a.all[href*=\"/video/\"]";
+        private const string TrailerVideoSelector = "a.continue";
+        private const string RatingSelector = "span.rating_ball";
+        private const string DirectorSelector = "td[itemprop=\"director\"] a";
+        private const string ActorsSelector = "div#actorList ul li";
 
         #endregion FilmParsingSelectors
 
@@ -113,6 +182,7 @@ namespace CinemaBot.Classes
 
         private const string IdSelector = "div p a.js-serp-metrika";
         private const string SimilarIdSelector = "a.i_orig";
+        private const string TopByGenreIdSelector = "div.MyKP_Folder_Select";
 
         #endregion
 
@@ -120,6 +190,7 @@ namespace CinemaBot.Classes
 
         private const string SearchUrl = "https://www.kinopoisk.ru/index.php?first=no&what=&kp_query=";
         private const string FilmUrl = "https://www.kinopoisk.ru/film/";
+        private const string TopByGenreUrl = "https://www.kinopoisk.ru/top/id_genre/";
 
         #endregion urls
     }
