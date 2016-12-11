@@ -31,7 +31,7 @@ namespace CinemaBot.Classes
             var htmlDocument = parser.Parse(document.Body.InnerHtml);
 
             var response = new StringBuilder();
-                
+
             response.Append($"**{GetElementTexts(htmlDocument, TitleRussianSelector)[0]}** ");
             response.Append($"({GetElementTexts(htmlDocument, YearSelector)[0]})");
             response.Append(Environment.NewLine);
@@ -42,9 +42,15 @@ namespace CinemaBot.Classes
             response.Append($"**Рейтинг КиноПоиска: {GetElementTexts(htmlDocument, RatingSelector)[0]}**");
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
-            response.Append($"[Трейлер]({await GetTrailerUrl(htmlDocument)})");
-            response.Append(Environment.NewLine);
-            response.Append(Environment.NewLine);
+
+            var trailerUrl = await GetTrailerUrl(htmlDocument);
+            if (!string.IsNullOrEmpty(trailerUrl))
+            {
+                response.Append($"[Трейлер]({trailerUrl})");
+                response.Append(Environment.NewLine);
+                response.Append(Environment.NewLine);
+            }
+
             response.Append($"**Режиссер**: {GetElementTexts(htmlDocument, DirectorSelector)[0]}");
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
@@ -100,17 +106,35 @@ namespace CinemaBot.Classes
         //refactor this shit
         private static async Task<string> GetTrailerUrl(IHtmlDocument parsedHtmlDocument)
         {
-            var trailerPageUrl =
-                $"https://kinopoisk.ru{GetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href")[0]}";
+            var trailerPageUrlPart = GetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href");
 
-            var config = Configuration.Default.WithDefaultLoader();
-            var trailerPageDocument = await BrowsingContext.New(config).OpenAsync(trailerPageUrl);
-            var parser = new AngleSharp.Parser.Html.HtmlParser();
-            var htmlDocument = parser.Parse(trailerPageDocument.Body.InnerHtml);
+            if (trailerPageUrlPart.Count != 0)
+            {
+                var trailerPageUrl =
+                    $"https://kinopoisk.ru{trailerPageUrlPart[0]}";
 
-            var url = GetElementAttributes(htmlDocument, TrailerVideoSelector, "href")[2];
+                var config = Configuration.Default.WithDefaultLoader();
+                var trailerPageDocument = await BrowsingContext.New(config).OpenAsync(trailerPageUrl);
+                var parser = new AngleSharp.Parser.Html.HtmlParser();
+                var htmlDocument = parser.Parse(trailerPageDocument.Body.InnerHtml);
 
-            return url.Substring(url.IndexOf("https", StringComparison.Ordinal));
+                var urls = GetElementAttributes(htmlDocument, TrailerVideoSelector, "href");
+                var correctUrls = urls.Where(url => url.Contains(".mp4")).ToList();
+
+                string trailerUrl;
+
+                if (correctUrls.Count != 0)
+                {
+                    trailerUrl = correctUrls.Count >= 3 ? correctUrls[2] : correctUrls[correctUrls.Count - 1];
+                }
+                else
+                {
+                    return trailerPageUrl;
+                }
+
+                return trailerUrl.Substring(trailerUrl.IndexOf("https", StringComparison.Ordinal));
+            }
+            return string.Empty;
         }
 
         private static List<string> GetElementTexts(IHtmlDocument parsedHtml, string selector)
