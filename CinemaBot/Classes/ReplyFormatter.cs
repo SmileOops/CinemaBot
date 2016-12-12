@@ -1,25 +1,54 @@
 ﻿using System;
-using Microsoft.Bot.Connector;
+using System.Text;
 
 namespace CinemaBot.Classes
-{
-    internal static class ReplyFormatter
+{//static removal
+    [Serializable]
+    public class ReplyFormatter
     {
+        #region errorPhrases   
         private const string searchError = "Я не могу найти ничего похожего :(";
+        #endregion
 
-        internal static Activity GetFilmInfoReply(Activity activity, FilmInfo filmInfo)
+        #region phrases
+
+        private const string hello = "Привет! Я буду искать для тебя хорошие фильмы.";
+
+        private const string skills =
+            "Чтобы узнать, что я умею, ты можешь ввести \"/help\" или нажать соответствующую кнопку.";
+        #endregion
+
+        public string GetFilmInfoReply( FilmInfo filmInfo)
         {
-            var reply = activity.CreateReply();
-            if (filmInfo.TextInfo != string.Empty && filmInfo.PosterUrl != string.Empty)
+            var sb = new StringBuilder();
+            if (filmInfo.TextInfo != string.Empty)
             {
-                reply.Text = filmInfo.TextInfo;
-                reply.Attachments.Add(new Attachment("image/jpg", filmInfo.PosterUrl));
+                sb.Append(filmInfo.TextInfo);
+                if (filmInfo.PosterUrl != string.Empty)
+                {
+                    sb.Append(Environment.NewLine);
+                    sb.Append(Environment.NewLine);
+                    sb.Append($"![poster]({filmInfo.PosterUrl})");
+                }
             }
             else
             {
-                reply.Text = searchError;
+                sb.Append(searchError);
             }
-            return reply;
+            return sb.ToString();
         }
+
+        public string GetHelloReply()
+        {
+            var replySb = new StringBuilder();
+            replySb.Append(hello);
+            replySb.Append(Environment.NewLine);
+            replySb.Append(Environment.NewLine);
+            replySb.Append(skills);
+
+            return replySb.ToString();
+        }
+
+
     }
 }

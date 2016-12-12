@@ -1,8 +1,8 @@
 ﻿namespace CinemaBot.Classes
 {
-    internal sealed class FilmInfo
+    public sealed class FilmInfo
     {
-        internal FilmInfo(string textInfo, string posterUrl)
+        public FilmInfo(string textInfo, string posterUrl)
         {
             TextInfo = textInfo;
             PosterUrl = posterUrl;

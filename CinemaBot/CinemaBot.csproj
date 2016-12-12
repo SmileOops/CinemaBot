@@ -124,6 +124,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Classes\Dialogs\UserDialog.cs" />
     <Compile Include="Classes\FilmInfo.cs" />
     <Compile Include="Classes\HtmlParser.cs" />
     <Compile Include="Classes\ReplyFormatter.cs" />

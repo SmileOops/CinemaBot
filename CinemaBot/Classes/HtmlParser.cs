@@ -10,21 +10,34 @@ using CinemaBot.Enums;
 
 namespace CinemaBot.Classes
 {
-    internal static class HtmlParser
+    [Serializable]
+    public class HtmlParser
     {
-        internal static async Task<FilmInfo> GetSimilarFilmInfo(string userQuery)
-        {
-            var ids = await GetFilmsIdsFromSearchPage(userQuery);
+        //internal static async Task<FilmInfo> GetSimilarFilmInfo(string userQuery)
+        //{
+        //    var ids = await GetFilmsIdsFromSearchPage(userQuery);
 
-            var similarIds = await GetFilmsIdsFromSimilarsPage(ids[0]);
-            if (similarIds.Count != 0)
-            {
-                return await GetFilmInfo(similarIds[0]);
-            }
-            return new FilmInfo(string.Empty, string.Empty);
-        }
+        //    var similarIds = await GetFilmsIdsFromSimilarsPage(ids[0]);
+        //    if (similarIds.Count != 0)
+        //    {
+        //        return await GetFilmInfo(similarIds[0]);
+        //    }
+        //    return new FilmInfo(string.Empty, string.Empty);
+        //}
 
-        private static async Task<FilmInfo> GetFilmInfo(string filmId)
+        //internal static async Task<FilmInfo> GetSaughtforFilmInfo(string userQuery)
+        //{
+        //    var ids = await GetFilmsIdsFromSearchPage(userQuery);
+
+        //    if (ids.Count != 0)
+        //    {
+        //        return await GetFilmInfo(ids[0]);
+        //    }
+
+        //    return new FilmInfo(string.Empty, string.Empty);
+        //}
+
+        public async Task<FilmInfo> GetFilmInfo(string filmId)
         {
             var config = Configuration.Default.WithDefaultLoader();
             var address = $"https://www.kinopoisk.ru/film/{filmId}";
@@ -61,10 +74,13 @@ namespace CinemaBot.Classes
             response.Append(Environment.NewLine);
             response.Append(GetElementTexts(htmlDocument, SynopsysSelector)[0]);
 
-            return new FilmInfo(response.ToString(), GetElementAttributes(htmlDocument, PosterSelector, "src")[0]);
+
+            var possiblePostersUrl = GetElementAttributes(htmlDocument, PosterSelector, "src");
+            var posterUrl = possiblePostersUrl.Count > 0 ? possiblePostersUrl[0] : string.Empty;
+            return new FilmInfo(response.ToString(), posterUrl);
         }
 
-        private static async Task<List<string>> GetFilmsIdsFromTopByGenrePage(GenresFromTop genre)
+        private async Task<List<string>> GetFilmsIdsFromTopByGenrePage(GenresFromTop genre)
         {
             var url = TopByGenreUrl + (int) genre;
 
@@ -76,7 +92,7 @@ namespace CinemaBot.Classes
         }
 
         //not all results yet
-        private static async Task<List<string>> GetFilmsIdsFromSearchPage(string userQuery)
+        public async Task<List<string>> GetFilmsIdsFromSearchPage(string userQuery)
         {
             var url = SearchUrl + EncodeCyrillicString(userQuery);
 
@@ -95,7 +111,7 @@ namespace CinemaBot.Classes
             
         }
 
-        private static async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)
+        private async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)
         {
             var url = FilmUrl + $"{filmId}/like";
 
@@ -106,7 +122,7 @@ namespace CinemaBot.Classes
             return attributes.Select(attribute => attribute.Replace("/film/", "")).ToList();
         }
 
-        private static async Task<IHtmlDocument> GetParsedPageByUrl(string url)
+        private async Task<IHtmlDocument> GetParsedPageByUrl(string url)
         {
             var config = Configuration.Default.WithDefaultLoader();
             var document = await BrowsingContext.New(config).OpenAsync(url);
@@ -116,7 +132,7 @@ namespace CinemaBot.Classes
         }
 
         //refactor this shit
-        private static async Task<string> GetTrailerUrl(IHtmlDocument parsedHtmlDocument)
+        private async Task<string> GetTrailerUrl(IHtmlDocument parsedHtmlDocument)
         {
             var trailerPageUrlPart = GetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href");
 
@@ -149,7 +165,7 @@ namespace CinemaBot.Classes
             return string.Empty;
         }
 
-        private static List<string> GetElementTexts(IHtmlDocument parsedHtml, string selector)
+        private List<string> GetElementTexts(IHtmlDocument parsedHtml, string selector)
         {
             var cells = parsedHtml.QuerySelectorAll(selector);
             var titlesList = new List<string>(cells.Select(m => m.TextContent));
@@ -157,7 +173,7 @@ namespace CinemaBot.Classes
             return titlesList;
         }
 
-        private static List<string> GetElementAttributes(IHtmlDocument parsedHtml, string selector, string attribute)
+        private List<string> GetElementAttributes(IHtmlDocument parsedHtml, string selector, string attribute)
         {
             var cells = parsedHtml.QuerySelectorAll(selector);
             var titlesList = new List<string>(cells.Select(m => m.GetAttribute(attribute)));
@@ -165,12 +181,12 @@ namespace CinemaBot.Classes
             return titlesList;
         }
 
-        private static string EncodeCyrillicString(string cyrillicSrc)
+        private string EncodeCyrillicString(string cyrillicSrc)
         {
             return HttpUtility.UrlEncode(cyrillicSrc, Encoding.GetEncoding(1251));
         }
 
-        private static string GetActorsString(IHtmlDocument parsedHtml)
+        private string GetActorsString(IHtmlDocument parsedHtml)
         {
             var actors = GetElementTexts(parsedHtml, ActorsSelector);
 
@@ -189,7 +205,7 @@ namespace CinemaBot.Classes
             {
                 for (var i = 0; i < actors.Count; i++)
                 {
-                    sb.Append(i != actors.Count - 1 ? $"{actors[i]}, " : $"{actors[i]}...");
+                    sb.Append(i != actors.Count - 1 ? $"{actors[i]}, " : $"{actors[i]}.");
                 }
             }
 
