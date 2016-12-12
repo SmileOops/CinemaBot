@@ -7,11 +7,11 @@ using Microsoft.Bot.Connector;
 namespace CinemaBot.Classes.Dialogs
 {
     [Serializable]
-    public class UserDialog: IDialog<object>
+    public class UserDialog : IDialog<object>
     {
-        protected List<string> Ids;
         protected string CurrentCommand;
         protected HtmlParser HtmlParser = new HtmlParser();
+        protected List<string> Ids;
         protected ReplyFormatter ReplyFormatter = new ReplyFormatter();
 
         public async Task StartAsync(IDialogContext context)
@@ -21,7 +21,7 @@ namespace CinemaBot.Classes.Dialogs
 
         public virtual async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
         {
-            var activity = (Activity)await argument;
+            var activity = (Activity) await argument;
             if (string.IsNullOrEmpty(CurrentCommand))
             {
                 switch (activity.Text)
@@ -75,7 +75,7 @@ namespace CinemaBot.Classes.Dialogs
 
         private async Task ContinueExecuteFindCommand(IDialogContext context, IAwaitable<IMessageActivity> message)
         {
-            var activity = (Activity)await message;
+            var activity = (Activity) await message;
 
             if (Ids == null)
             {
@@ -86,7 +86,8 @@ namespace CinemaBot.Classes.Dialogs
                         await HtmlParser.GetFilmInfo(Ids[0])));
             }
 
-            PromptDialog.Confirm(context, AnswerDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"", promptStyle: PromptStyle.Keyboard);
+            PromptDialog.Confirm(context, AnswerDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"",
+                promptStyle: PromptStyle.Keyboard);
         }
 
         public async Task AnswerDialog(IDialogContext context, IAwaitable<bool> argument)
@@ -101,7 +102,8 @@ namespace CinemaBot.Classes.Dialogs
                     context.PostAsync(ReplyFormatter.GetFilmInfoReply(
                         await HtmlParser.GetFilmInfo(Ids[0])));
 
-                PromptDialog.Confirm(context, AnswerDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"", promptStyle: PromptStyle.Keyboard);
+                PromptDialog.Confirm(context, AnswerDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"",
+                    promptStyle: PromptStyle.Keyboard);
             }
             else
             {

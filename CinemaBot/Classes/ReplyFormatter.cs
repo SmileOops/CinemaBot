@@ -2,23 +2,18 @@
 using System.Text;
 
 namespace CinemaBot.Classes
-{//static removal
+{ //static removal
+
     [Serializable]
     public class ReplyFormatter
     {
         #region errorPhrases   
+
         private const string searchError = "Я не могу найти ничего похожего :(";
+
         #endregion
 
-        #region phrases
-
-        private const string hello = "Привет! Я буду искать для тебя хорошие фильмы.";
-
-        private const string skills =
-            "Чтобы узнать, что я умею, ты можешь ввести \"/help\" или нажать соответствующую кнопку.";
-        #endregion
-
-        public string GetFilmInfoReply( FilmInfo filmInfo)
+        public string GetFilmInfoReply(FilmInfo filmInfo)
         {
             var sb = new StringBuilder();
             if (filmInfo.TextInfo != string.Empty)
@@ -49,6 +44,13 @@ namespace CinemaBot.Classes
             return replySb.ToString();
         }
 
+        #region phrases
 
+        private const string hello = "Привет! Я буду искать для тебя хорошие фильмы.";
+
+        private const string skills =
+            "Чтобы узнать, что я умею, ты можешь ввести \"/help\" или нажать соответствующую кнопку.";
+
+        #endregion
     }
 }

@@ -104,11 +104,7 @@ namespace CinemaBot.Classes
             {
                 return ids.Distinct().ToList();
             }
-            else
-            {
-                return new List<string>();
-            }
-            
+            return new List<string>();
         }
 
         private async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)

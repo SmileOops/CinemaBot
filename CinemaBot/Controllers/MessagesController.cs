@@ -1,9 +1,7 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using CinemaBot.Classes;
 using CinemaBot.Classes.Dialogs;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
@@ -16,7 +14,7 @@ namespace CinemaBot.Controllers
         public async Task<HttpResponseMessage> Post([FromBody] Activity activity)
         {
             if (activity.Type == ActivityTypes.Message)
-            { 
+            {
                 await Conversation.SendAsync(activity, () => new UserDialog());
             }
             else
@@ -37,11 +35,9 @@ namespace CinemaBot.Controllers
             }
             else if (message.Type == ActivityTypes.ContactRelationUpdate)
             {
-                
             }
             else if (message.Type == ActivityTypes.Typing)
             {
-                
             }
             else if (message.Type == ActivityTypes.Ping)
             {
