@@ -106,11 +106,6 @@ namespace CinemaBot.Classes.Dialogs
                 promptStyle: PromptStyle.Keyboard);
         }
 
-        private async Task ContinueExecuteFindTopByGenreCommand(IDialogContext context,
-            IAwaitable<IMessageActivity> message)
-        {
-        }
-
         public async Task ChooseNextFilmDialog(IDialogContext context, IAwaitable<bool> argument)
         {
             var isConfirmed = await argument;

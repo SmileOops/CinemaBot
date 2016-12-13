@@ -23,36 +23,46 @@ namespace CinemaBot.Classes
 
             var response = new StringBuilder();
 
-            response.Append($"**{GetElementTexts(htmlDocument, TitleRussianSelector)[0]}** ");
-            response.Append($"({GetElementTexts(htmlDocument, YearSelector)[0]})");
+            List<string> possibleInfoParts;
+
+            if (TryGetElementTexts(htmlDocument, TitleRussianSelector, out possibleInfoParts))
+                response.Append($"**{possibleInfoParts[0]}** ");
+            if (TryGetElementTexts(htmlDocument, YearSelector, out possibleInfoParts))
+                response.Append($"({possibleInfoParts[0]})");
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
-            response.Append(GetElementTexts(htmlDocument, TitleEnglishSelector)[0]);
+            if (TryGetElementTexts(htmlDocument, TitleEnglishSelector, out possibleInfoParts))
+                response.Append(possibleInfoParts[0]);
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
-            response.Append($"**Рейтинг КиноПоиска: {GetElementTexts(htmlDocument, RatingSelector)[0]}**");
+            if (TryGetElementTexts(htmlDocument, RatingSelector, out possibleInfoParts))
+                response.Append($"**Рейтинг КиноПоиска: {possibleInfoParts[0]}**");
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
 
-            var trailerUrl = await GetTrailerUrl(htmlDocument);
-            if (!string.IsNullOrEmpty(trailerUrl))
-            {
-                response.Append($"[Трейлер]({trailerUrl})");
-                response.Append(Environment.NewLine);
-                response.Append(Environment.NewLine);
-            }
-
-            response.Append($"**Режиссер**: {GetElementTexts(htmlDocument, DirectorSelector)[0]}");
+            //var trailerUrl = await GetTrailerUrl(htmlDocument);
+            //if (!string.IsNullOrEmpty(trailerUrl))
+            //{
+            //    response.Append($"[Трейлер]({trailerUrl})");
+            //    response.Append(Environment.NewLine);
+            //    response.Append(Environment.NewLine);
+            //}
+            if(TryGetElementTexts(htmlDocument, DirectorSelector, out possibleInfoParts))
+                response.Append($"**Режиссер**: {possibleInfoParts[0]}");
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
             response.Append(GetActorsString(htmlDocument));
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
-            response.Append(GetElementTexts(htmlDocument, SynopsysSelector)[0]);
 
+            if (TryGetElementTexts(htmlDocument, SynopsysSelector, out possibleInfoParts))
+                response.Append(possibleInfoParts[0]);
 
-            var possiblePostersUrl = GetElementAttributes(htmlDocument, PosterSelector, "src");
-            var posterUrl = possiblePostersUrl.Count > 0 ? possiblePostersUrl[0] : string.Empty;
+            var posterUrl = string.Empty;
+
+            if (TryGetElementAttributes(htmlDocument, PosterSelector, "src", out possibleInfoParts))
+                posterUrl = possibleInfoParts[0];
+
             return new FilmInfo(response.ToString(), posterUrl);
         }
 
@@ -62,7 +72,9 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            var attributes = GetElementAttributes(htmlDocument, TopByGenreIdSelector, "mid").ToList();
+            List<string> attributes;
+
+            TryGetElementAttributes(htmlDocument, TopByGenreIdSelector, "mid", out attributes);
 
             return attributes;
         }
@@ -74,9 +86,9 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            var ids = GetElementAttributes(htmlDocument, IdSelector, "data-id");
-
-            if (ids.Count != 0)
+            List<string> ids; 
+            
+            if (TryGetElementAttributes(htmlDocument, FilmIdSelector, "data-id", out ids))
             {
                 return ids.Distinct().ToList();
             }
@@ -89,7 +101,9 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            var attributes = GetElementAttributes(htmlDocument, SimilarIdSelector, "href");
+            List<string> attributes; 
+
+            TryGetElementAttributes(htmlDocument, SimilarIdSelector, "href", out attributes);
 
             return attributes.Select(attribute => attribute.Replace("/film/", "")).ToList();
         }
@@ -106,51 +120,56 @@ namespace CinemaBot.Classes
         //refactor this shit
         private async Task<string> GetTrailerUrl(IHtmlDocument parsedHtmlDocument)
         {
-            var trailerPageUrlPart = GetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href");
+            List<string> trailerPageUrlParts;
 
-            if (trailerPageUrlPart.Count != 0)
+            if (TryGetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href", out trailerPageUrlParts))
             {
                 var trailerPageUrl =
-                    $"https://kinopoisk.ru{trailerPageUrlPart[0]}";
+                    $"https://kinopoisk.ru{trailerPageUrlParts[0]}";
 
                 var config = Configuration.Default.WithDefaultLoader();
                 var trailerPageDocument = await BrowsingContext.New(config).OpenAsync(trailerPageUrl);
                 var parser = new AngleSharp.Parser.Html.HtmlParser();
                 var htmlDocument = parser.Parse(trailerPageDocument.Body.InnerHtml);
 
-                var urls = GetElementAttributes(htmlDocument, TrailerVideoSelector, "href");
-                var correctUrls = urls.Where(url => url.Contains(".mp4")).ToList();
 
-                string trailerUrl;
-
-                if (correctUrls.Count != 0)
+                List<string> urls;
+                if (TryGetElementAttributes(htmlDocument, TrailerVideoSelector, "href", out urls))
                 {
-                    trailerUrl = correctUrls.Count >= 3 ? correctUrls[2] : correctUrls[correctUrls.Count - 1];
-                }
-                else
-                {
-                    return trailerPageUrl;
-                }
+                    var correctUrls = urls.Where(url => url.Contains(".mp4")).ToList();
 
-                return trailerUrl.Substring(trailerUrl.IndexOf("https", StringComparison.Ordinal));
+                    string trailerUrl;
+
+                    if (correctUrls.Count != 0)
+                    {
+                        trailerUrl = correctUrls.Count >= 3 ? correctUrls[2] : correctUrls[correctUrls.Count - 1];
+                    }
+                    else
+                    {
+                        return trailerPageUrl;
+                    }
+
+                    return trailerUrl.Substring(trailerUrl.IndexOf("https", StringComparison.Ordinal));
+                }
             }
             return string.Empty;
         }
 
-        private List<string> GetElementTexts(IHtmlDocument parsedHtml, string selector)
+        private bool TryGetElementTexts(IHtmlDocument parsedHtml, string selector, out List<string> result)
         {
             var cells = parsedHtml.QuerySelectorAll(selector);
-            var titlesList = new List<string>(cells.Select(m => m.TextContent));
+            result = new List<string>(cells.Select(m => m.TextContent));
 
-            return titlesList;
+            return result.Count > 0;
+            
         }
 
-        private List<string> GetElementAttributes(IHtmlDocument parsedHtml, string selector, string attribute)
+        private bool TryGetElementAttributes(IHtmlDocument parsedHtml, string selector, string attribute, out List<string> result)
         {
             var cells = parsedHtml.QuerySelectorAll(selector);
-            var titlesList = new List<string>(cells.Select(m => m.GetAttribute(attribute)));
+            result = new List<string>(cells.Select(m => m.GetAttribute(attribute)));
 
-            return titlesList;
+            return result.Count > 0;
         }
 
         private string EncodeCyrillicString(string cyrillicSrc)
@@ -160,28 +179,33 @@ namespace CinemaBot.Classes
 
         private string GetActorsString(IHtmlDocument parsedHtml)
         {
-            var actors = GetElementTexts(parsedHtml, ActorsSelector);
+            List<string> actors;
 
-            var sb = new StringBuilder();
-
-            sb.Append("**В главных ролях**: ");
-
-            if (actors.Count >= 4)
+            if (TryGetElementTexts(parsedHtml, ActorsSelector, out actors))
             {
-                sb.Append($"{actors[0]}, ");
-                sb.Append($"{actors[1]}, ");
-                sb.Append($"{actors[2]}, ");
-                sb.Append($"{actors[3]}...");
-            }
-            else
-            {
-                for (var i = 0; i < actors.Count; i++)
+                var sb = new StringBuilder();
+
+                sb.Append("**В главных ролях**: ");
+
+                if (actors.Count >= 4)
                 {
-                    sb.Append(i != actors.Count - 1 ? $"{actors[i]}, " : $"{actors[i]}.");
+                    sb.Append($"{actors[0]}, ");
+                    sb.Append($"{actors[1]}, ");
+                    sb.Append($"{actors[2]}, ");
+                    sb.Append($"{actors[3]}...");
                 }
+                else
+                {
+                    for (var i = 0; i < actors.Count; i++)
+                    {
+                        sb.Append(i != actors.Count - 1 ? $"{actors[i]}, " : $"{actors[i]}.");
+                    }
+                }
+
+                return sb.ToString();
             }
 
-            return sb.ToString();
+            return String.Empty;
         }
 
         #region FilmParsingSelectors
@@ -204,7 +228,7 @@ namespace CinemaBot.Classes
 
         #region SearchParsingSelectors
 
-        private const string IdSelector = "div p a.js-serp-metrika";
+        private const string FilmIdSelector = "div p a.js-serp-metrika[data-type=\"film\"]";
         private const string SimilarIdSelector = "a.i_orig";
         private const string TopByGenreIdSelector = "div.MyKP_Folder_Select";
 
