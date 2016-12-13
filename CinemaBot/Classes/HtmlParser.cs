@@ -13,30 +13,6 @@ namespace CinemaBot.Classes
     [Serializable]
     public class HtmlParser
     {
-        //internal static async Task<FilmInfo> GetSimilarFilmInfo(string userQuery)
-        //{
-        //    var ids = await GetFilmsIdsFromSearchPage(userQuery);
-
-        //    var similarIds = await GetFilmsIdsFromSimilarsPage(ids[0]);
-        //    if (similarIds.Count != 0)
-        //    {
-        //        return await GetFilmInfo(similarIds[0]);
-        //    }
-        //    return new FilmInfo(string.Empty, string.Empty);
-        //}
-
-        //internal static async Task<FilmInfo> GetSaughtforFilmInfo(string userQuery)
-        //{
-        //    var ids = await GetFilmsIdsFromSearchPage(userQuery);
-
-        //    if (ids.Count != 0)
-        //    {
-        //        return await GetFilmInfo(ids[0]);
-        //    }
-
-        //    return new FilmInfo(string.Empty, string.Empty);
-        //}
-
         public async Task<FilmInfo> GetFilmInfo(string filmId)
         {
             var config = Configuration.Default.WithDefaultLoader();
@@ -80,7 +56,7 @@ namespace CinemaBot.Classes
             return new FilmInfo(response.ToString(), posterUrl);
         }
 
-        private async Task<List<string>> GetFilmsIdsFromTopByGenrePage(GenresFromTop genre)
+        public async Task<List<string>> GetFilmsIdsFromTopByGenrePage(GenresFromTop genre)
         {
             var url = TopByGenreUrl + (int) genre;
 
@@ -107,7 +83,7 @@ namespace CinemaBot.Classes
             return new List<string>();
         }
 
-        private async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)
+        public async Task<List<string>> GetFilmsIdsFromSimilarsPage(string filmId)
         {
             var url = FilmUrl + $"{filmId}/like";
 

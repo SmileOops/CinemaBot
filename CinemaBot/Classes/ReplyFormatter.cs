@@ -2,14 +2,13 @@
 using System.Text;
 
 namespace CinemaBot.Classes
-{ //static removal
-
+{
     [Serializable]
     public class ReplyFormatter
     {
         #region errorPhrases   
 
-        private const string searchError = "Я не могу найти ничего похожего :(";
+        private const string SearchError = "Я не могу найти ничего похожего :(";
 
         #endregion
 
@@ -28,7 +27,7 @@ namespace CinemaBot.Classes
             }
             else
             {
-                sb.Append(searchError);
+                sb.Append(SearchError);
             }
             return sb.ToString();
         }
@@ -36,20 +35,38 @@ namespace CinemaBot.Classes
         public string GetHelloReply()
         {
             var replySb = new StringBuilder();
-            replySb.Append(hello);
+            replySb.Append(Hello);
             replySb.Append(Environment.NewLine);
             replySb.Append(Environment.NewLine);
-            replySb.Append(skills);
+            replySb.Append(Skills);
+
+            return replySb.ToString();
+        }
+
+        public string GetHelpReply()
+        {
+            var replySb = new StringBuilder();
+            replySb.Append(FindCommand);
+            replySb.Append(Environment.NewLine);
+            replySb.Append(Environment.NewLine);
+            replySb.Append(FindSimilarCommand);
+            replySb.Append(Environment.NewLine);
+            replySb.Append(Environment.NewLine);
+            replySb.Append(FindTopByGenreCommand);
 
             return replySb.ToString();
         }
 
         #region phrases
 
-        private const string hello = "Привет! Я буду искать для тебя хорошие фильмы.";
+        private const string Hello = "Привет! Я буду искать для тебя хорошие фильмы.";
 
-        private const string skills =
+        private const string Skills =
             "Чтобы узнать, что я умею, ты можешь ввести \"/help\" или нажать соответствующую кнопку.";
+
+        private const string FindCommand = "/find - найдет фильмы с указанным тобой названием";
+        private const string FindSimilarCommand = "/findSimilar - найдет фильмы, похожие на фильм с указанным названием";
+        private const string FindTopByGenreCommand = "/findTopByGenre - найдет лучшие фильмы указанного жанра";
 
         #endregion
     }
