@@ -58,3 +58,5 @@ obj/
 packages/
 .vs/
 access.txt
+CinemaBot/Classes/Commands/AvailableCommands.cs
+CinemaBot/Classes/Commands/Command.cs

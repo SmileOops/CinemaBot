@@ -29,40 +29,38 @@ namespace CinemaBot.Classes.Dialogs
         public virtual async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
         {
             var activity = (Activity) await argument;
-            if (string.IsNullOrEmpty(CurrentCommand))
+
+            switch (activity.Text)
             {
-                switch (activity.Text)
-                {
-                    case "/find":
-                        await context.PostAsync("Введите название фильма:");
-                        context.Wait(ContinueExecuteFindCommand);
-                        break;
+                case "/find":
+                    await context.PostAsync("Введите название фильма:");
+                    context.Wait(ContinueExecuteFindCommand);
+                    break;
 
-                    case "/findsimilar":
-                        await context.PostAsync("Введите название фильма:");
-                        context.Wait(ContinueExecuteFindSimilarCommand);
-                        break;
+                case "/findsimilar":
+                    await context.PostAsync("Введите название фильма:");
+                    context.Wait(ContinueExecuteFindSimilarCommand);
+                    break;
 
-                    case "/findtopbygenre":
-                        PromptDialog.Choice(context, ChooseGenreDialog, Genres.Keys, "Выберите жанр:",
-                            "Нажмите на одну из кнопок", promptStyle: PromptStyle.Keyboard);
-                        break;
+                case "/findtopbygenre":
+                    PromptDialog.Choice(context, ChooseGenreDialog, Genres.Keys, "Выберите жанр:",
+                        "Нажмите на одну из кнопок", promptStyle: PromptStyle.Keyboard);
+                    break;
 
-                    case "/start":
-                        await context.PostAsync(ReplyFormatter.GetHelloReply());
-                        context.Wait(MessageReceivedAsync);
-                        break;
+                case "/start":
+                    await context.PostAsync(ReplyFormatter.GetHelloReply());
+                    context.Wait(MessageReceivedAsync);
+                    break;
 
-                    case "/help":
-                        await context.PostAsync(ReplyFormatter.GetHelpReply());
-                        context.Wait(MessageReceivedAsync);
-                        break;
+                case "/help":
+                    await context.PostAsync(ReplyFormatter.GetHelpReply());
+                    context.Wait(MessageReceivedAsync);
+                    break;
 
-                    default:
-                        await context.PostAsync("Неверная команда!");
-                        context.Wait(MessageReceivedAsync);
-                        break;
-                }
+                default:
+                    await context.PostAsync("Неверная команда!");
+                    context.Wait(MessageReceivedAsync);
+                    break;
             }
         }
 
@@ -74,13 +72,25 @@ namespace CinemaBot.Classes.Dialogs
             {
                 Ids = await HtmlParser.GetFilmsIdsFromSearchPage(activity.Text);
 
-                await
-                    context.PostAsync(ReplyFormatter.GetFilmInfoReply(
-                        await HtmlParser.GetFilmInfo(Ids[0])));
+                if (Ids.Count > 0)
+                {
+                    await
+                        context.PostAsync(ReplyFormatter.GetFilmInfoReply(
+                            await HtmlParser.GetFilmInfo(Ids[0])));
+                }
             }
 
-            PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"",
-                promptStyle: PromptStyle.Keyboard);
+            if (Ids.Count > 0)
+            {
+                PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"",
+                    promptStyle: PromptStyle.Keyboard);
+            }
+            else
+            {
+                await context.PostAsync("Не могу ничего найти :(");
+                Ids = null;
+                context.Wait(MessageReceivedAsync);
+            }
         }
 
         private async Task ContinueExecuteFindSimilarCommand(IDialogContext context,
@@ -88,6 +98,7 @@ namespace CinemaBot.Classes.Dialogs
         {
             var activity = (Activity) await message;
 
+            bool isRootFilmFound = true;
             if (Ids == null)
             {
                 var rootFilmIds = await HtmlParser.GetFilmsIdsFromSearchPage(activity.Text);
@@ -96,14 +107,30 @@ namespace CinemaBot.Classes.Dialogs
                 {
                     Ids = await HtmlParser.GetFilmsIdsFromSimilarsPage(rootFilmIds[0]);
 
-                    await
-                        context.PostAsync(ReplyFormatter.GetFilmInfoReply(
-                            await HtmlParser.GetFilmInfo(Ids[0])));
+                    if (Ids.Count > 0)
+                    {
+                        await
+                            context.PostAsync(ReplyFormatter.GetFilmInfoReply(
+                                await HtmlParser.GetFilmInfo(Ids[0])));
+                    }
+                }
+                else
+                {
+                    isRootFilmFound = false;
                 }
             }
 
-            PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"",
-                promptStyle: PromptStyle.Keyboard);
+            if (isRootFilmFound && Ids.Count > 0)
+            {
+                PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"", 
+                    promptStyle: PromptStyle.Keyboard);
+            }
+            else
+            {
+                await context.PostAsync("Не могу ничего найти :(");
+                Ids = null;
+                context.Wait(MessageReceivedAsync);
+            }
         }
 
         public async Task ChooseNextFilmDialog(IDialogContext context, IAwaitable<bool> argument)
