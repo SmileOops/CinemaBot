@@ -47,7 +47,7 @@ namespace CinemaBot.Classes
             //    response.Append(Environment.NewLine);
             //    response.Append(Environment.NewLine);
             //}
-            if(TryGetElementTexts(htmlDocument, DirectorSelector, out possibleInfoParts))
+            if (TryGetElementTexts(htmlDocument, DirectorSelector, out possibleInfoParts))
                 response.Append($"**Режиссер**: {possibleInfoParts[0]}");
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
@@ -86,8 +86,8 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            List<string> ids; 
-            
+            List<string> ids;
+
             if (TryGetElementAttributes(htmlDocument, FilmIdSelector, "data-id", out ids))
             {
                 return ids.Distinct().ToList();
@@ -101,7 +101,7 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            List<string> attributes; 
+            List<string> attributes;
 
             TryGetElementAttributes(htmlDocument, SimilarIdSelector, "href", out attributes);
 
@@ -161,10 +161,10 @@ namespace CinemaBot.Classes
             result = new List<string>(cells.Select(m => m.TextContent));
 
             return result.Count > 0;
-            
         }
 
-        private bool TryGetElementAttributes(IHtmlDocument parsedHtml, string selector, string attribute, out List<string> result)
+        private bool TryGetElementAttributes(IHtmlDocument parsedHtml, string selector, string attribute,
+            out List<string> result)
         {
             var cells = parsedHtml.QuerySelectorAll(selector);
             result = new List<string>(cells.Select(m => m.GetAttribute(attribute)));
