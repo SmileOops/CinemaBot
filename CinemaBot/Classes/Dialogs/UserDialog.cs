@@ -73,16 +73,15 @@ namespace CinemaBot.Classes.Dialogs
                 Ids = await HtmlParser.GetFilmsIdsFromSearchPage(activity.Text);
 
                 if (Ids.Count > 0)
-                {
                     await
                         context.PostAsync(ReplyFormatter.GetFilmInfoReply(
                             await HtmlParser.GetFilmInfo(Ids[0])));
-                }
             }
 
             if (Ids.Count > 0)
             {
-                PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"",
+                PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?",
+                    "Нажмите \"Да\" или \"Нет\"",
                     promptStyle: PromptStyle.Keyboard);
             }
             else
@@ -98,21 +97,19 @@ namespace CinemaBot.Classes.Dialogs
         {
             var activity = (Activity) await message;
 
-            bool isRootFilmFound = true;
+            var isRootFilmFound = true;
             if (Ids == null)
             {
                 var rootFilmIds = await HtmlParser.GetFilmsIdsFromSearchPage(activity.Text);
-                
+
                 if (rootFilmIds.Count > 0)
                 {
                     Ids = await HtmlParser.GetFilmsIdsFromSimilarsPage(rootFilmIds[0]);
 
                     if (Ids.Count > 0)
-                    {
                         await
                             context.PostAsync(ReplyFormatter.GetFilmInfoReply(
                                 await HtmlParser.GetFilmInfo(Ids[0])));
-                    }
                 }
                 else
                 {
@@ -122,7 +119,8 @@ namespace CinemaBot.Classes.Dialogs
 
             if (isRootFilmFound && Ids.Count > 0)
             {
-                PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?", "Нажмите \"Да\" или \"Нет\"", 
+                PromptDialog.Confirm(context, ChooseNextFilmDialog, "Хотите другой фильм?",
+                    "Нажмите \"Да\" или \"Нет\"",
                     promptStyle: PromptStyle.Keyboard);
             }
             else

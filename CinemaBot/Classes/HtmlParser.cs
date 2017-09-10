@@ -75,9 +75,7 @@ namespace CinemaBot.Classes
             var htmlDocument = await GetParsedPageByUrl(url);
 
             if (TryGetElementAttributes(htmlDocument, FilmIdSelector, "data-id", out var ids))
-            {
                 return ids.Distinct().ToList();
-            }
             return new List<string>();
         }
 
@@ -121,13 +119,9 @@ namespace CinemaBot.Classes
                     string trailerUrl;
 
                     if (correctUrls.Count != 0)
-                    {
                         trailerUrl = correctUrls.Count >= 3 ? correctUrls[2] : correctUrls[correctUrls.Count - 1];
-                    }
                     else
-                    {
                         return trailerPageUrl;
-                    }
 
                     return trailerUrl.Substring(trailerUrl.IndexOf("https", StringComparison.Ordinal));
                 }
@@ -175,15 +169,13 @@ namespace CinemaBot.Classes
                 else
                 {
                     for (var i = 0; i < actors.Count; i++)
-                    {
                         sb.Append(i != actors.Count - 1 ? $"{actors[i]}, " : $"{actors[i]}.");
-                    }
                 }
 
                 return sb.ToString();
             }
 
-            return String.Empty;
+            return string.Empty;
         }
 
         #region FilmParsingSelectors

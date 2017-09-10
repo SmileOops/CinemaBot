@@ -65,7 +65,10 @@ namespace CinemaBot.Classes
             "Чтобы узнать, что я умею, ты можешь ввести \"/help\" или нажать соответствующую кнопку.";
 
         private const string FindCommand = "/find - найдет фильмы с указанным тобой названием";
-        private const string FindSimilarCommand = "/findSimilar - найдет фильмы, похожие на фильм с указанным названием";
+
+        private const string FindSimilarCommand =
+            "/findSimilar - найдет фильмы, похожие на фильм с указанным названием";
+
         private const string FindTopByGenreCommand = "/findTopByGenre - найдет лучшие фильмы указанного жанра";
 
         #endregion
