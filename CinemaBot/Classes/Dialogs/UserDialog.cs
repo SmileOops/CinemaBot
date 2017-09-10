@@ -102,7 +102,7 @@ namespace CinemaBot.Classes.Dialogs
             if (Ids == null)
             {
                 var rootFilmIds = await HtmlParser.GetFilmsIdsFromSearchPage(activity.Text);
-                //check root film required
+                
                 if (rootFilmIds.Count > 0)
                 {
                     Ids = await HtmlParser.GetFilmsIdsFromSimilarsPage(rootFilmIds[0]);
@@ -177,8 +177,7 @@ namespace CinemaBot.Classes.Dialogs
 
             if (Ids == null)
             {
-                GenresFromTop genreId;
-                if (Genres.TryGetValue(genreString, out genreId))
+                if (Genres.TryGetValue(genreString, out var genreId))
                 {
                     Ids = await HtmlParser.GetFilmsIdsFromTopByGenrePage(genreId);
 

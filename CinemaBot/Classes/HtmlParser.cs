@@ -23,9 +23,7 @@ namespace CinemaBot.Classes
 
             var response = new StringBuilder();
 
-            List<string> possibleInfoParts;
-
-            if (TryGetElementTexts(htmlDocument, TitleRussianSelector, out possibleInfoParts))
+            if (TryGetElementTexts(htmlDocument, TitleRussianSelector, out var possibleInfoParts))
                 response.Append($"**{possibleInfoParts[0]}** ");
             if (TryGetElementTexts(htmlDocument, YearSelector, out possibleInfoParts))
                 response.Append($"({possibleInfoParts[0]})");
@@ -40,13 +38,6 @@ namespace CinemaBot.Classes
             response.Append(Environment.NewLine);
             response.Append(Environment.NewLine);
 
-            //var trailerUrl = await GetTrailerUrl(htmlDocument);
-            //if (!string.IsNullOrEmpty(trailerUrl))
-            //{
-            //    response.Append($"[Трейлер]({trailerUrl})");
-            //    response.Append(Environment.NewLine);
-            //    response.Append(Environment.NewLine);
-            //}
             if (TryGetElementTexts(htmlDocument, DirectorSelector, out possibleInfoParts))
                 response.Append($"**Режиссер**: {possibleInfoParts[0]}");
             response.Append(Environment.NewLine);
@@ -72,23 +63,18 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            List<string> attributes;
-
-            TryGetElementAttributes(htmlDocument, TopByGenreIdSelector, "mid", out attributes);
+            TryGetElementAttributes(htmlDocument, TopByGenreIdSelector, "mid", out var attributes);
 
             return attributes;
         }
 
-        //not all results yet
         public async Task<List<string>> GetFilmsIdsFromSearchPage(string userQuery)
         {
             var url = SearchUrl + EncodeCyrillicString(userQuery);
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            List<string> ids;
-
-            if (TryGetElementAttributes(htmlDocument, FilmIdSelector, "data-id", out ids))
+            if (TryGetElementAttributes(htmlDocument, FilmIdSelector, "data-id", out var ids))
             {
                 return ids.Distinct().ToList();
             }
@@ -101,9 +87,7 @@ namespace CinemaBot.Classes
 
             var htmlDocument = await GetParsedPageByUrl(url);
 
-            List<string> attributes;
-
-            TryGetElementAttributes(htmlDocument, SimilarIdSelector, "href", out attributes);
+            TryGetElementAttributes(htmlDocument, SimilarIdSelector, "href", out var attributes);
 
             return attributes.Select(attribute => attribute.Replace("/film/", "")).ToList();
         }
@@ -117,12 +101,9 @@ namespace CinemaBot.Classes
             return parser.Parse(document.Body.InnerHtml);
         }
 
-        //refactor this shit
         private async Task<string> GetTrailerUrl(IHtmlDocument parsedHtmlDocument)
         {
-            List<string> trailerPageUrlParts;
-
-            if (TryGetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href", out trailerPageUrlParts))
+            if (TryGetElementAttributes(parsedHtmlDocument, TrailerPageSelector, "href", out var trailerPageUrlParts))
             {
                 var trailerPageUrl =
                     $"https://kinopoisk.ru{trailerPageUrlParts[0]}";
@@ -133,8 +114,7 @@ namespace CinemaBot.Classes
                 var htmlDocument = parser.Parse(trailerPageDocument.Body.InnerHtml);
 
 
-                List<string> urls;
-                if (TryGetElementAttributes(htmlDocument, TrailerVideoSelector, "href", out urls))
+                if (TryGetElementAttributes(htmlDocument, TrailerVideoSelector, "href", out var urls))
                 {
                     var correctUrls = urls.Where(url => url.Contains(".mp4")).ToList();
 
@@ -179,9 +159,7 @@ namespace CinemaBot.Classes
 
         private string GetActorsString(IHtmlDocument parsedHtml)
         {
-            List<string> actors;
-
-            if (TryGetElementTexts(parsedHtml, ActorsSelector, out actors))
+            if (TryGetElementTexts(parsedHtml, ActorsSelector, out var actors))
             {
                 var sb = new StringBuilder();
 
